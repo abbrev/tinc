@@ -199,7 +199,7 @@ static ssize_t client_write(const char *buf, size_t count)
 	size_t left = count;
 	while (left) {
 		n = write(outfd, buf, left);
-		if (n < 0) {
+		if (n <= 0) {
 			if (left == count) {
 				return -1;
 			} else {
