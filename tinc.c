@@ -274,14 +274,6 @@ static int transfer_data(CableHandle *handle)
 		// read from client
 		uint8_t buf[BUFSIZ];
 		ssize_t n = client_read((char *)buf, sizeof(buf));
-		if (n == 0) {
-			// EOF
-			break;
-		} else if (n < 0 && errno != EAGAIN) {
-			perror("read error");
-			// error
-			goto err;
-		}
 		
 		// read from TI and write to client
 		for (;;) {
@@ -308,13 +300,24 @@ static int transfer_data(CableHandle *handle)
 		}
 
 		// write to TI
-		if (n > 0) {
+		if (n == 0) {
+			// EOF
+			//fprintf(stderr, "<EOF>");
+			// make sure data is flushed to calc (why is a small sleep necessary here?)
+			//usleep(timeout * 100000L);
+			usleep(100000);
+			break;
+		} else if (n > 0) {
 			//fprintf(stderr, "send...\n");
 			err = ticables_cable_send(handle, buf, n);
 			if (err) {
 				// send error
 				goto err;
 			}
+		} else if (errno != EAGAIN) {
+			perror("read error");
+			// error
+			goto err;
 		}
 	}
 	ret = 0; // no error, regular exit (EOF)
