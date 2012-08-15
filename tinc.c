@@ -60,16 +60,28 @@ enum network_mode {
 
 static enum network_mode network_mode = NETWORK_NONE;
 static int infd = -1, outfd = -1;
-static CableModel cableModel = CABLE_TIE;
+static CableModel cableModel = CABLE_NUL;
 static CablePort cablePort = PORT_1;
 static int signalled = 0;
+static int verbosity = 0;
 
 static void usage(int status)
 {
 	fprintf(stderr,
-	        "Usage: %s [-k] [-t TIMEOUT] [ -l port | host port ]\n",
+	        "Usage: %s [-hkLvV] [-c CABLE] [-p CABLEPORT] [-t TIMEOUT] [ -l PORT | HOST PORT ]\n",
 		argv0);
+	// TODO: print option descriptions
 	exit(status);
+}
+
+static void license()
+{
+	fprintf(stderr, "license goes here\n");
+}
+
+static void version()
+{
+	fprintf(stderr, "version goes here\n");
 }
 
 static void get_options(int argc, char *argv[])
@@ -78,8 +90,16 @@ static void get_options(int argc, char *argv[])
 
 	argv0 = argv[0];
 
-	while ((opt = getopt(argc, argv, "hl:kt:")) != -1) {
+	while ((opt = getopt(argc, argv, "VLvc:p:hl:kt:")) != -1) {
 		switch (opt) {
+		case 'L':
+			license();
+			exit(EXIT_SUCCESS);
+			break;
+		case 'V':
+			version();
+			exit(EXIT_SUCCESS);
+			break;
 		case 'l':
 			network_mode = NETWORK_SERVER;
 			port = atol(optarg);
@@ -96,11 +116,34 @@ static void get_options(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 			break;
+		case 'c':
+			cableModel = ticables_string_to_model(optarg);
+			if (cableModel == CABLE_NUL) {
+				fprintf(stderr, "%s: unknown cable '%s'\n",
+				        argv0, optarg);
+				exit(EXIT_FAILURE);
+			}
+			break;
+		case 'p':
+			cablePort = atoi(optarg);
+			if (cablePort < 1 || 4 < cablePort) {
+				fprintf(stderr,
+				        "%s: port must be between 1 and 4!\n",
+				        argv0);
+				exit(EXIT_FAILURE);
+			}
+			break;
+		case 'v':
+			if (++verbosity > 2)
+				verbosity = 2;
+			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
+			break;
 
 		default: /* '?' */
 			usage(EXIT_FAILURE);
+			break;
 		}
 	}
 
@@ -297,6 +340,7 @@ static void gloghandler(const gchar *log_domain, GLogLevelFlags log_level,
                         const gchar *message, gpointer user_data)
 {
 	const char *level = "";
+	GLogLevelFlags minlevel = G_LOG_LEVEL_WARNING;
 	switch (log_level) {
 		case G_LOG_LEVEL_DEBUG: level = "DEBUG"; break;
 		case G_LOG_LEVEL_INFO: level = "INFO"; break;
@@ -306,8 +350,15 @@ static void gloghandler(const gchar *log_domain, GLogLevelFlags log_level,
 		case G_LOG_LEVEL_ERROR: level = "ERROR"; break;
 		default: level = "UNKNOWN"; break;
 	}
-	fprintf(stderr, "%s-%s: %s\n", log_domain, level, message);
-	if (log_level & G_LOG_LEVEL_ERROR) {
+	switch (verbosity) {
+	case 0: minlevel = G_LOG_LEVEL_WARNING; break;
+	case 1: minlevel = G_LOG_LEVEL_INFO; break;
+	case 2: minlevel = G_LOG_LEVEL_DEBUG; break;
+	}
+	if (log_level <= minlevel) {
+		fprintf(stderr, "%s-%s: %s\n", log_domain, level, message);
+	}
+	if (log_level <= G_LOG_LEVEL_ERROR) {
 		abort();
 	}
 }
