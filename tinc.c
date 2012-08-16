@@ -38,7 +38,7 @@ some options from nc that might be added to tinc:
  *
  * other options:
  * -k          keep alive after first connection
- * -t TIMEOUT  timeout for reading from/writing to TI (in deciseconds)
+ * -t TIMEOUT  timeout for reading from/writing to TI (in milliseconds)
  */
 
 /*
@@ -61,15 +61,27 @@ enum network_mode {
 static enum network_mode network_mode = NETWORK_NONE;
 static int infd = -1, outfd = -1;
 static CableModel cableModel = CABLE_NUL;
-static CablePort cablePort = PORT_1;
+static CablePort cablePort = PORT_0;
 static int signalled = 0;
 static int verbosity = 0;
 
 static void usage(int status)
 {
 	fprintf(stderr,
-	        "Usage: %s [-hkLvV] [-c CABLE] [-p CABLEPORT] [-t TIMEOUT] [ -l PORT | HOST PORT ]\n",
-		argv0);
+	        "Usage: %s [OPTIONS] [ -l PORT | HOST PORT ]\n"
+	        "Options:\n"
+	        "      -h          print this help message and exit\n"
+	        "      -L          print license information and exit\n"
+	        "      -V          print version information and exit\n"
+	        "      -k          keep listening for additional connections\n"
+	        "                  after each connection closes\n"
+	        "      -c CABLE    set cable model\n"
+	        "      -p PORT     set cable port\n"
+	        "      -t TIMEOUT  set cable read/write timeout (in milliseconds)\n"
+	        "      -v          display verbose output\n"
+	        "                  use this option twice for more verbosity\n",
+
+	        argv0);
 	// TODO: print option descriptions
 	exit(status);
 }
@@ -266,7 +278,7 @@ static int transfer_data(CableHandle *handle)
 	}
 
 	if (timeout > 0) {
-		ticables_options_set_timeout(handle, timeout);
+		ticables_options_set_timeout(handle, (timeout + 99) / 100);
 	}
 
 	for (;;) {
