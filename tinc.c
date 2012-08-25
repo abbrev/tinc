@@ -261,7 +261,7 @@ static void print_lc_error(int errnum)
 /*
  * read from client (block for a short time)
  */
-static ssize_t client_read(char *buf, size_t count)
+static ssize_t client_read(void *buf, size_t count)
 {
 	fd_set set;
 	FD_ZERO(&set);
@@ -294,11 +294,11 @@ static ssize_t client_write(const char *buf, size_t count)
 }
 
 // write everything from buf to cable
-static int cable_write(CableHandle *handle, const char *buf, size_t n)
+static int cable_write(CableHandle *handle, const void *buf, size_t n)
 {
 	int err;
 	while (n) {
-		err = ticables_cable_put(handle, *buf);
+		err = ticables_cable_put(handle, (uint8_t)*buf);
 		if (err) return ERROR_WRITE_TIMEOUT;
 		++buf;
 		--n;
@@ -323,8 +323,9 @@ static int transfer_data(CableHandle *handle)
 	for (;;) {
 		if (signalled) goto err;
 		// read from client
-		uint8_t buf[BUFSIZ];
-		ssize_t n = client_read((char *)buf, sizeof(buf));
+		char buf[BUFSIZ];
+		ssize_t n = client_read(buf, sizeof(buf));
+		int errno_saved = errno;
 		
 		// read from TI and write to client
 		for (;;) {
@@ -365,7 +366,7 @@ static int transfer_data(CableHandle *handle)
 				// send error
 				goto err;
 			}
-		} else if (errno != EAGAIN) {
+		} else if (errno_saved != EAGAIN) {
 			perror("read error");
 			// error
 			goto err;
