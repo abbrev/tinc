@@ -293,6 +293,19 @@ static ssize_t client_write(const char *buf, size_t count)
 	return count - left;
 }
 
+// write everything from buf to cable
+static int cable_write(CableHandle *handle, const char *buf, size_t n)
+{
+	int err;
+	while (n) {
+		err = ticables_cable_put(handle, *buf);
+		if (err) return ERROR_WRITE_TIMEOUT;
+		++buf;
+		--n;
+	}
+	return 0;
+}
+
 static int transfer_data(CableHandle *handle)
 {
 	int ret = -1;
@@ -347,7 +360,7 @@ static int transfer_data(CableHandle *handle)
 			break;
 		} else if (n > 0) {
 			//fprintf(stderr, "send...\n");
-			err = ticables_cable_send(handle, buf, n);
+			err = cable_write(handle, buf, n);
 			if (err) {
 				// send error
 				goto err;
