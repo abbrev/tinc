@@ -7,6 +7,32 @@
 #include <ticables.h>
 
 /*
+ * Lionel Debroux suggested that this program may become part of TITools
+ * sometime down the road.
+ *
+ * Possible issues with this:
+ *  - tt_init() uses ticalcs methods to probe, query, and otherwise talk to the
+ *    calculator
+ *  - tt_init() refuses to work if calculator model is not known
+ *
+ * tinc needs none of that stuff, and it would be detrimental to its operation
+ * (only what the client writes to tinc should be written to the calculator).
+ * tt_init() could be modified easily to skip the ticalcs stuff with an
+ * additional flag telling it to do so.
+ *
+ * Here is a list of titools common options:
+ *  --cable -c CABLE[:PORT] Specify cable type and port number
+ *  --calc -m MODEL         Specify calculator model
+ *  --timeout -T N          Time out after N milliseconds
+ *  --verbose -v            Show details of link operations
+ *  --version               Display program version info
+ *
+ * tinc should be modified to use more of the glib facilities as this library
+ * is used by the ti* libraries, and it gives us some time-saving
+ * functionality.
+ */
+
+/*
  * XXX: I'm debating whether to add networking capabilities (server and client
  * modes) or to leave them out and have the user use nc for networking.
  */
