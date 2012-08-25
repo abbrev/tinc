@@ -295,7 +295,7 @@ static int transfer_data(CableHandle *handle)
 				goto err;
 			}
 			//fprintf(stderr, "<%d>", (int)status);
-			if (status != STATUS_RX) {
+			if (!(status & STATUS_RX)) {
 				break;
 			}
 			uint8_t data;
