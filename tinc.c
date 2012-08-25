@@ -298,7 +298,7 @@ static int cable_write(CableHandle *handle, const void *buf, size_t n)
 {
 	int err;
 	while (n) {
-		err = ticables_cable_put(handle, (uint8_t)*buf);
+		err = ticables_cable_put(handle, *(uint8_t *)buf);
 		if (err) return ERROR_WRITE_TIMEOUT;
 		++buf;
 		--n;
